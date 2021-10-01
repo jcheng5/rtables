@@ -2,7 +2,7 @@
 title: "Comparing Against Baselines or Control"
 author: "Gabriel Becker and Adrian Waddell"
 date: "`r Sys.Date()`"
-output: rmarkdown::html_vignette
+output: pdf_document
 vignette: >
   %\VignetteIndexEntry{Comparing Against Baselines or Control}
   %\VignetteEncoding{UTF-8}
@@ -25,6 +25,35 @@ knitr::opts_chunk$set(comment = "")
 .reveal .r code {
     white-space: pre;
 }
+```
+
+
+```{r}
+library(rtables)
+library(dplyr)
+```
+
+
+```{r}
+## for simplicity grab non-sparse subset
+ADSL = ex_adsl %>% filter(RACE %in% levels(RACE)[1:3])
+
+biomarker_ave = function(x, ...) {
+     val = if(length(x) > 0) round(mean(x), 2) else "no data"
+     in_rows(
+        "Biomarker 1 (mean)" = rcell(val)
+     )
+}
+
+basic_table() %>%
+  split_cols_by("ARM") %>%
+  split_cols_by("BMRKR2") %>%
+  add_colcounts() %>%
+  split_rows_by("RACE", split_fun = trim_levels_in_group("SEX")) %>%
+  split_rows_by("SEX") %>%
+  summarize_row_groups() %>%
+  analyze("BMRKR1", biomarker_ave) %>%
+  build_table(ADSL)
 ```
 
 

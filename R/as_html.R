@@ -65,6 +65,31 @@ as_html <- function(x,
     return(tags$p("Empty Table"))
   }
   
+  ir <- as_tgen_ir(x, width = width, class_table = class_table,
+                   class_tr = class_tr, class_td = class_td,
+                   class_th = class_th, caption_txt = caption_txt,
+                   link_label = link_label)
+  
+  htmltools::HTML(tgen::write_table(ir_str = as.character(ir), format = "html"))
+}
+
+as_latex <- function(x) {
+
+  ir <- as_tgen_ir(x)
+  
+  tgen::write_table(ir_str = as.character(ir), format = "latex")
+}
+
+as_tgen_ir <- function(x,
+                       width = NULL,
+                       class_table = NULL,
+                       class_tr = NULL,
+                       class_td = NULL,
+                       class_th = NULL,
+                       caption_txt = NULL,
+                       link_label = NULL) {
+  
+  # TODO: Implement these other features
   stopifnot(is(x, "VTableTree"))
   
   mat <- matrix_form(x)
@@ -143,6 +168,7 @@ as_html <- function(x,
   
   rows_head <- head(rows, nrh)
   rows_body <- tail(rows, -nrh)
+  
   
   tags$table(class = class_table,
     tags$colgroup(
