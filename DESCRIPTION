@@ -19,7 +19,8 @@ Depends: methods, magrittr, R (>= 2.10)
 Imports:
   stats,
   htmltools,
-  grid
+  grid,
+  tgen
 Suggests:
   dplyr,
   tibble,
@@ -28,6 +29,8 @@ Suggests:
   xml2,
   knitr,
   rmarkdown
+Remotes:
+  rstudio/tgen-r
 License: Apache License 2.0 | file LICENSE
 Encoding: UTF-8
 LazyData: true
@@ -48,6 +51,7 @@ Collate:
     'format_rcell.R'
     'indent.R'
     'make_subset_expr.R'
+    'print.R'
     'prune.R'
     'rtable.R'
     'simple_analysis.R'

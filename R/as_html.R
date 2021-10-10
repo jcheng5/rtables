@@ -54,7 +54,7 @@ insert_brs <- function(vec) {
 #' }
 as_html <- function(x,
                     width = NULL,
-                    class_table = "table table-condensed table-hover",
+                    class_table = NULL,
                     class_tr = NULL,
                     class_td = NULL,
                     class_th = NULL,
@@ -65,6 +65,31 @@ as_html <- function(x,
     return(tags$p("Empty Table"))
   }
   
+  ir <- as_tgen_ir(x, width = width, class_table = class_table,
+                   class_tr = class_tr, class_td = class_td,
+                   class_th = class_th, caption_txt = caption_txt,
+                   link_label = link_label)
+  
+  htmltools::HTML(tgen::write_table(ir_str = as.character(ir), format = "html"))
+}
+
+as_latex <- function(x) {
+
+  ir <- as_tgen_ir(x)
+  
+  tgen::write_table(ir_str = as.character(ir), format = "latex")
+}
+
+as_tgen_ir <- function(x,
+                       width = NULL,
+                       class_table = NULL,
+                       class_tr = NULL,
+                       class_td = NULL,
+                       class_th = NULL,
+                       caption_txt = NULL,
+                       link_label = NULL) {
+  
+  # TODO: Implement these other features
   stopifnot(is(x, "VTableTree"))
   
   mat <- matrix_form(x)
@@ -75,12 +100,17 @@ as_html <- function(x,
   cells <- matrix(rep(list(list()), (nrh + nrow(x)) * (ncol(x) + 1)),
                   ncol = ncol(x) + 1)
   
+  col_aligns <- default_col_align(mat$aligns)
+
   for(i in unique(mat$line_grouping)) {
     rows <- which(mat$line_grouping == i)
     for(j in 1:ncol(mat$strings)) {
       curstrs <- mat$strings[rows,j]
       curspans <- mat$spans[rows,j]
       curaligns <- mat$aligns[rows,j]
+      # Use this column's default alignment value to determine if it's necessary
+      # to explicitly put alignment directives on this cell
+      default_align <- col_aligns[[j]]
       
       curspn <- unique(curspans)
       stopifnot(length(curspn) == 1)
@@ -90,7 +120,7 @@ as_html <- function(x,
       stopifnot(length(algn) == 1)
       cells[i, j][[1]] <- tagfun(
         class = if (inhdr) class_th else class_tr,
-        class = if(j > 1 || i > nrh) paste0("text-", algn),
+        class = if ((j > 1 || i > nrh) && algn != default_align) paste0("text-", algn),
         colspan = if (curspn != 1) curspn,
         insert_brs(curstrs)
       )
@@ -100,7 +130,7 @@ as_html <- function(x,
   ## special casing hax for top_left. We probably want to do this better someday
   cells[1:nrh, 1] <- mapply(
     FUN = function(x, algn) {
-      tags$th(x, class = class_th, style = "white-space:pre;")
+      tags$th(x, class = class_th)
     },
     x = mat$strings[1:nrh, 1],
     algn = mat$aligns[1:nrh, 1],
@@ -112,7 +142,7 @@ as_html <- function(x,
     indent <- mat$row_info$indent[i]
     if (indent > 0) {
       cells[i + nrh, 1][[1]] <- htmltools::tagAppendAttributes(cells[i + nrh, 1][[1]],
-                                                               style = paste0("padding-left: ", indent * 3, "ch"))
+                                                               indent = indent)
     }
   }
   
@@ -135,5 +165,38 @@ as_html <- function(x,
   } else {
     captag <- NULL
   }
-  tags$table(class = class_table, rows, captag)
+  
+  rows_head <- head(rows, nrh)
+  rows_body <- tail(rows, -nrh)
+  
+  
+  tags$table(class = class_table,
+    tags$colgroup(
+      lapply(col_aligns, function(algn) {
+        tags$col(align = algn)
+      })
+    ),
+    tags$thead(rows_head),
+    tags$tbody(rows_body),
+    captag
+  )
+}
+
+# Given a matrix of cell alignment values ("left", "center", "right"),
+# return a vector of length ncol(aligns) that contains the most common
+# alignment value for the respective column.
+default_col_align <- function(aligns) {
+  stopifnot(all(aligns %in% c("left", "center", "right")))
+  
+  # aligns is a 2D matrix
+  apply(aligns, 2, function(col_aligns) {
+    if (length(col_aligns) == 0) {
+      ""
+    } else {
+      # Return the column alignment that is most common
+      tbl <- table(col_aligns)
+      names(tbl)[[order(tbl, decreasing = TRUE)[[1]]]]
+    }
+    
+  })
 }

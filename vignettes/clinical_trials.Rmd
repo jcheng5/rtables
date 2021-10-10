@@ -2,7 +2,7 @@
 title: "Example Clinical Trials Tables"
 author: "Gabriel Becker and Adrian Waddell"
 date: "`r Sys.Date()`"
-output: rmarkdown::html_vignette
+output: pdf_document
 vignette: >
   %\VignetteIndexEntry{Example Clinical Trials Tables}
   %\VignetteEncoding{UTF-8}
